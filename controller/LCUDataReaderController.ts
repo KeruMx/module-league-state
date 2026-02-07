@@ -145,7 +145,10 @@ export class LCUDataReaderController extends Controller {
         : i + state.lcu.lobby.gameConfig.customTeam100.length
 
     // Use summonerName if available, otherwise construct from gameName and tagLine (Riot ID format)
-    const playerName = player.summonerName ?? (player.gameName && player.tagLine ? `${player.gameName}#${player.tagLine}` : player.gameName)
+    // If gameName exists with tagLine, format as "gameName#tagLine"
+    // If only gameName exists, use just gameName
+    // Falls back to undefined if neither summonerName nor gameName is available
+    const playerName = player.summonerName ?? (player.gameName ? (player.tagLine ? `${player.gameName}#${player.tagLine}` : player.gameName) : undefined)
 
     if (state.lcu.lobby.playerOrder.has(playerName)) {
       if (i !== state.lcu.lobby.playerOrder.get(playerName)[2]) {
