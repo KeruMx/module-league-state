@@ -144,14 +144,18 @@ export class LCUDataReaderController extends Controller {
         ? i
         : i + state.lcu.lobby.gameConfig.customTeam100.length
 
-    if (state.lcu.lobby.playerOrder.has(player.summonerName)) {
-      if (i !== state.lcu.lobby.playerOrder.get(player.summonerName)[2]) {
-        state.lcu.lobby.playerOrder.get(player.summonerName)[1] = i
-        state.lcu.lobby.playerOrder.get(player.summonerName)[2] = i
+    // Use summonerName if available, otherwise construct from gameName and tagLine (Riot ID format)
+    const playerName = player.summonerName ?? (player.gameName && player.tagLine ? `${player.gameName}#${player.tagLine}` : player.gameName)
+
+    if (state.lcu.lobby.playerOrder.has(playerName)) {
+      if (i !== state.lcu.lobby.playerOrder.get(playerName)[2]) {
+        state.lcu.lobby.playerOrder.get(playerName)[1] = i
+        state.lcu.lobby.playerOrder.get(playerName)[2] = i
 
         return {
-          nickname: member?.nickname ?? player.summonerName,
+          nickname: member?.nickname ?? playerName,
           ...player,
+          summonerName: playerName,
           lcuPosition,
           sortedPosition: i,
           elo: team[i].elo,
@@ -159,26 +163,28 @@ export class LCUDataReaderController extends Controller {
         }
       } else {
         return {
-          nickname: member?.nickname ?? player.summonerName,
+          nickname: member?.nickname ?? playerName,
           ...player,
+          summonerName: playerName,
           lcuPosition,
           sortedPosition: state.lcu.lobby.playerOrder.get(
-            player.summonerName
+            playerName
           )[2],
           elo: team[i].elo,
           teamId
         }
       }
     } else {
-      state.lcu.lobby.playerOrder.set(player.summonerName, [
+      state.lcu.lobby.playerOrder.set(playerName, [
         teamId,
         lcuPosition,
         lcuPosition
       ])
 
       return {
-        nickname: player.summonerName,
+        nickname: playerName,
         ...player,
+        summonerName: playerName,
         lcuPosition,
         sortedPosition: lcuPosition,
         elo: team[i].elo,
