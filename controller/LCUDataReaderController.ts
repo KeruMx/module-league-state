@@ -131,9 +131,10 @@ export class LCUDataReaderController extends Controller {
   addOrUpdatePlayer(player: any): any {
     if (player.isSpectator) return
 
-    const teamId = state.lcu.lobby.gameConfig.customTeam100.findIndex((p: any) => p.puuid === player.puuid) >= 0 ? 100 : 200
+    // Add null checks when iterating over team arrays since they can contain null entries (empty lobby slots)
+    const teamId = state.lcu.lobby.gameConfig.customTeam100.findIndex((p: any) => p && p.puuid === player.puuid) >= 0 ? 100 : 200
     const team = teamId === 100 ? state.lcu.lobby.gameConfig.customTeam100 : state.lcu.lobby.gameConfig.customTeam200
-    const i = team.findIndex((p: any) => p.puuid === player.puuid)
+    const i = team.findIndex((p: any) => p && p.puuid === player.puuid)
 
     const member = state.lcu.lobby.members.find((m: any) =>
       m && m.puuid === player.puuid
@@ -144,44 +145,53 @@ export class LCUDataReaderController extends Controller {
         ? i
         : i + state.lcu.lobby.gameConfig.customTeam100.length
 
-    if (state.lcu.lobby.playerOrder.has(player.summonerName)) {
-      if (i !== state.lcu.lobby.playerOrder.get(player.summonerName)[2]) {
-        state.lcu.lobby.playerOrder.get(player.summonerName)[1] = i
-        state.lcu.lobby.playerOrder.get(player.summonerName)[2] = i
+    // Use summonerName if available, otherwise construct from gameName and tagLine (Riot ID format)
+    // If gameName exists with tagLine, format as "gameName#tagLine"
+    // If only gameName exists, use just gameName
+    // Falls back to undefined if neither summonerName nor gameName is available
+    const playerName = player.summonerName ?? (player.gameName ? (player.tagLine ? `${player.gameName}#${player.tagLine}` : player.gameName) : undefined)
+
+    if (state.lcu.lobby.playerOrder.has(playerName)) {
+      if (i !== state.lcu.lobby.playerOrder.get(playerName)[2]) {
+        state.lcu.lobby.playerOrder.get(playerName)[1] = i
+        state.lcu.lobby.playerOrder.get(playerName)[2] = i
 
         return {
-          nickname: member?.nickname ?? player.summonerName,
+          nickname: member?.nickname ?? playerName,
           ...player,
+          summonerName: playerName,
           lcuPosition,
           sortedPosition: i,
-          elo: team[i].elo,
+          elo: team[i]?.elo,
           teamId
         }
       } else {
         return {
-          nickname: member?.nickname ?? player.summonerName,
+          nickname: member?.nickname ?? playerName,
           ...player,
+          summonerName: playerName,
           lcuPosition,
           sortedPosition: state.lcu.lobby.playerOrder.get(
-            player.summonerName
+            playerName
           )[2],
-          elo: team[i].elo,
+          elo: team[i]?.elo,
           teamId
         }
       }
     } else {
-      state.lcu.lobby.playerOrder.set(player.summonerName, [
+      state.lcu.lobby.playerOrder.set(playerName, [
         teamId,
         lcuPosition,
         lcuPosition
       ])
 
       return {
-        nickname: player.summonerName,
+        nickname: playerName,
         ...player,
+        summonerName: playerName,
         lcuPosition,
         sortedPosition: lcuPosition,
-        elo: team[i].elo,
+        elo: team[i]?.elo,
         teamId
       }
     }

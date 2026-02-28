@@ -78,6 +78,7 @@ const updateUi = (state) => {
 
 const formLoadByName = async () => {
   const name = document.querySelector('#name').value
+  const tagLine = document.querySelector('#tagLine').value
 
   await LPTE.request({
     meta: {
@@ -86,8 +87,7 @@ const formLoadByName = async () => {
       version: 1
     },
     by: 'summonerName',
-    gameName: name,
-    tagLine: tagLine
+    summonerName: `${name}#${tagLine}`
   })
 
   await updateState()
